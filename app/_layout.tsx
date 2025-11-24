@@ -1,24 +1,53 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { theme } from '@/constants/theme';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
+import { PaperProvider } from 'react-native-paper';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+// Componente interno para controlar o redirecionamento
+function RootNavigation() {
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+  useEffect(() => {
+    if (loading) return;
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+    const inAuthGroup = segments[0] === '(auth)';
+
+    console.log('[Navigation Debug]', {
+      user: !!user,
+      loading,
+      segments,
+      inAuthGroup
+    });
+
+    if (!user && !inAuthGroup) {
+      // Se não tá logado e não tá na área de auth, manda pro login
+      console.log('[Navigation] Redirecting to login...');
+      router.replace('/(auth)/login');
+    } else if (user && inAuthGroup) {
+      // Se tá logado e tenta ir pro login, manda pro dashboard
+      console.log('[Navigation] Redirecting to tabs...');
+      router.replace('/(tabs)');
+    }
+  }, [user, loading, segments]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <PaperProvider theme={theme}>
+      <AuthProvider>
+        <RootNavigation />
+      </AuthProvider>
+    </PaperProvider>
   );
 }

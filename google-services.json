@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "157075554622",
+    "project_id": "botvips-notifications",
+    "storage_bucket": "botvips-notifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:157075554622:android:e921ff941ac0b303a92c6f",
+        "android_client_info": {
+          "package_name": "com.anonymous.botvipsmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBexBJJoEU12FZr60CoRZJUiM7pBQcg2hg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
