@@ -69,6 +69,13 @@ export default function Login() {
       >
         ENTRAR
       </Button>
+      <Button
+        mode="text"
+        onPress={() => router.push('/(auth)/register')}
+        style={{ marginTop: 20 }}
+      >
+        Criar uma conta
+      </Button>
     </View>
   );
 }

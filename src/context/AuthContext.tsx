@@ -7,6 +7,7 @@ interface AuthContextData {
   user: User | null;
   loading: boolean;
   signIn: (email: string, pass: string) => Promise<void>;
+  signUp: (name: string, email: string, pass: string, affiliateCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -61,6 +62,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
+  async function signUp(name: string, email: string, pass: string, affiliateCode?: string) {
+    try {
+      // Lembra do erro de digitação no backend? É 'singup' mesmo
+      await api.post('/user/singup', {
+        name,
+        email,
+        password: pass,
+        affiliateIndication: affiliateCode
+      });
+      // O backend não retorna token no cadastro, apenas 200 OK.
+      // Então não fazemos setUser aqui. O usuário será redirecionado para logar.
+    } catch (error: any) {
+      console.error(error);
+      // Repassa o erro para a tela mostrar o alerta
+      throw error;
+    }
+  }
+
   async function signOut() {
     await SecureStore.deleteItemAsync('user_token');
     await SecureStore.deleteItemAsync('user_data');
@@ -68,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
