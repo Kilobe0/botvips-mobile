@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { ActivityIndicator, Avatar, Divider, Surface, Text, useTheme } from 'react-native-paper';
 
@@ -26,16 +27,21 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Estados para o filtro de data
+  const [initDate, setInitDate] = useState(startOfMonth(new Date()));
+  const [finishDate, setFinishDate] = useState(endOfMonth(new Date()));
+  const [showPicker, setShowPicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'init' | 'finish'>('init');
+
   const screenWidth = Dimensions.get('window').width;
 
   // Função que busca os dados na API
   const loadDashboard = useCallback(async () => {
     try {
-      const now = new Date();
       const payload = {
         botId: null, // null pega todos os bots do usuário
-        initDate: startOfMonth(now).toISOString(),
-        finishDate: endOfMonth(now).toISOString()
+        initDate: initDate.toISOString(),
+        finishDate: finishDate.toISOString()
       };
 
       const response = await api.post('/user/dashboard', payload);
@@ -47,10 +53,11 @@ export default function DashboardScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [initDate, finishDate]);
 
-  // Carrega ao abrir a tela
+  // Carrega ao abrir a tela e quando as datas mudam
   useEffect(() => {
+    setLoading(true);
     loadDashboard();
   }, [loadDashboard]);
 
@@ -60,8 +67,32 @@ export default function DashboardScreen() {
     loadDashboard();
   };
 
+  // Handlers para o DatePicker
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowPicker(false);
+    }
+
+    if (selectedDate) {
+      if (pickerMode === 'init') {
+        setInitDate(selectedDate);
+        // Se a data final for menor que a inicial, ajusta a final
+        if (finishDate < selectedDate) {
+          setFinishDate(endOfMonth(selectedDate));
+        }
+      } else {
+        setFinishDate(selectedDate);
+      }
+    }
+  };
+
+  const showDatePicker = (mode: 'init' | 'finish') => {
+    setPickerMode(mode);
+    setShowPicker(true);
+  };
+
   // Loading State
-  if (loading) {
+  if (loading && !refreshing && !data) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -71,12 +102,12 @@ export default function DashboardScreen() {
   }
 
   // Se não carregar nada (erro ou vazio)
-  if (!data) return null;
+  if (!data && !loading) return null;
 
-  const gd = data.generalDashboard;
+  const gd = data?.generalDashboard;
 
   // Prepara dados para o Gráfico (Gifted Charts)
-  const chartData = gd.graphs.map(g => ({
+  const chartData = gd?.graphs.map(g => ({
     value: g.value / 100, // Converte centavos para reais
     label: format(new Date(g.label), 'dd', { locale: ptBR }), // Dia do mês
     frontColor: theme.colors.primary,
@@ -85,183 +116,230 @@ export default function DashboardScreen() {
         {formatMoney(g.value, gd.currency).replace('R$', '').trim()}
       </Text>
     ),
-  }));
+  })) || [];
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      contentContainerStyle={{ paddingBottom: 100 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
-      }
-    >
-      {/* Cabeçalho */}
-      <View style={styles.header}>
-        <View>
-          <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
-            Olá, Empreendedor!
-          </Text>
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            Resumo de {format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
-          </Text>
-        </View>
-        <Avatar.Image size={40} source={{ uri: 'https://i.pravatar.cc/150' }} />
-      </View>
-
-      {/* Card Principal - Faturamento Total */}
-      <LinearGradient
-        colors={[theme.colors.primary, '#00b359']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.mainCard}
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+        }
       >
-        <View style={styles.mainCardContent}>
-          <View>
-            <Text style={{ color: '#000', opacity: 0.8, fontWeight: '600' }}>Faturamento Total</Text>
-            <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#000', marginTop: 4 }}>
-              {formatMoney(gd.billing, gd.currency)}
+        {/* Cabeçalho */}
+        <View style={styles.header}>
+          <View style={{ flex: 1 }}>
+            <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
+              Olá, Empreendedor!
             </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => showDatePicker('init')}
+                style={[styles.dateButton, { borderColor: theme.colors.primary }]}
+              >
+                <MaterialCommunityIcons name="calendar-arrow-right" size={16} color={theme.colors.primary} />
+                <Text variant="bodySmall" style={{ color: theme.colors.primary, fontWeight: 'bold', marginLeft: 4 }}>
+                  {format(initDate, "dd/MM")}
+                </Text>
+              </TouchableOpacity>
+
+              <Text style={{ color: theme.colors.onSurfaceVariant }}>até</Text>
+
+              <TouchableOpacity
+                onPress={() => showDatePicker('finish')}
+                style={[styles.dateButton, { borderColor: theme.colors.primary }]}
+              >
+                <MaterialCommunityIcons name="calendar-arrow-left" size={16} color={theme.colors.primary} />
+                <Text variant="bodySmall" style={{ color: theme.colors.primary, fontWeight: 'bold', marginLeft: 4 }}>
+                  {format(finishDate, "dd/MM")}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.iconContainer}>
-            <MaterialCommunityIcons name="finance" size={32} color="#000" />
-          </View>
+
+          <Avatar.Image size={40} source={{ uri: 'https://i.pravatar.cc/150' }} />
         </View>
-        <View style={styles.mainCardFooter}>
-          <Text style={{ color: '#000', opacity: 0.7, fontSize: 12 }}>
-            Referente ao período selecionado
-          </Text>
-        </View>
-      </LinearGradient>
 
-      {/* Cards Secundários (Hoje e Mês) */}
-      <View style={styles.row}>
-        <Surface style={[styles.secondaryCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
-          <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="calendar-today" size={20} color={theme.colors.primary} />
-            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8 }}>Hoje</Text>
-          </View>
-          <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8 }}>
-            {formatMoney(gd.billingToday, gd.currency)}
-          </Text>
-        </Surface>
-
-        <Surface style={[styles.secondaryCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
-          <View style={styles.cardHeader}>
-            <MaterialCommunityIcons name="calendar-month" size={20} color={theme.colors.primary} />
-            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8 }}>Mês Atual</Text>
-          </View>
-          <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8 }}>
-            {formatMoney(gd.billingMonth, gd.currency)}
-          </Text>
-        </Surface>
-      </View>
-
-      {/* Gráfico */}
-      <View style={styles.sectionContainer}>
-        <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
-          Evolução Diária
-        </Text>
-        <Surface style={[styles.chartCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
-          <BarChart
-            data={chartData}
-            barWidth={22}
-            noOfSections={4}
-            barBorderRadius={4}
-            frontColor={theme.colors.primary}
-            yAxisThickness={0}
-            xAxisThickness={0}
-            yAxisTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 10 }}
-            xAxisLabelTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 10 }}
-            height={200}
-            width={screenWidth - 64}
-            initialSpacing={10}
-            spacing={20}
-            isAnimated
-            hideRules
-          />
-        </Surface>
-      </View>
-
-      {/* Métricas em Grid */}
-      <View style={styles.sectionContainer}>
-        <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
-          Performance
-        </Text>
-        <View style={styles.gridContainer}>
-          <MetricItem
-            label="Pedidos Criados"
-            value={gd.createdOrdersCount}
-            icon="shopping-outline"
-            theme={theme}
-          />
-          <MetricItem
-            label="Vendas Pagas"
-            value={gd.paidOrdersCount}
-            icon="check-circle-outline"
-            color={theme.colors.primary}
-            theme={theme}
-          />
-          <MetricItem
-            label="Pendentes"
-            value={gd.pendingOrdersCount}
-            icon="clock-time-four-outline"
-            color={gd.pendingOrdersCount > 0 ? '#FFB800' : theme.colors.onSurfaceVariant}
-            theme={theme}
-          />
-          <MetricItem
-            label="Ticket Médio"
-            value={formatMoney(gd.averageTicketValue, gd.currency)}
-            icon="cash-multiple"
-            theme={theme}
-            isMoney
-          />
-          <MetricItem
-            label="Conversão"
-            value={`${gd.conversionRate}%`}
-            icon="chart-line-variant"
-            color={gd.conversionRate > 10 ? theme.colors.primary : '#FFB800'}
-            theme={theme}
-            fullWidth
-          />
-        </View>
-      </View>
-
-      {/* Dashboards Internacionais */}
-      {data.internationalDashboards && data.internationalDashboards.length > 0 && (
-        <View style={styles.sectionContainer}>
-          <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
-            Internacional
-          </Text>
-          {data.internationalDashboards.map((intDash, index) => (
-            <Surface key={index} style={[styles.internationalCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
-              <View style={styles.internationalHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Avatar.Icon icon="earth" size={32} style={{ backgroundColor: theme.colors.primaryContainer }} color={theme.colors.primary} />
-                  <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginLeft: 12 }}>
-                    {intDash.currency}
-                  </Text>
-                </View>
-                <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
-                  {formatMoney(intDash.billing, intDash.currency)}
+        {/* Card Principal - Faturamento Total */}
+        {gd && (
+          <LinearGradient
+            colors={[theme.colors.primary, '#00b359']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.mainCard}
+          >
+            <View style={styles.mainCardContent}>
+              <View>
+                <Text style={{ color: '#000', opacity: 0.7, fontWeight: '800', fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  Faturamento Total
+                </Text>
+                <Text style={{ fontSize: 38, fontWeight: '900', color: '#000', marginTop: 8, letterSpacing: -1 }}>
+                  {formatMoney(gd.billing, gd.currency)}
                 </Text>
               </View>
-              <Divider style={{ marginVertical: 12, backgroundColor: theme.colors.outline, opacity: 0.2 }} />
-              <View style={styles.internationalStats}>
-                <View style={styles.statItem}>
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Vendas</Text>
-                  <Text variant="bodyLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>{intDash.paidOrdersCount}</Text>
-                </View>
-                <View style={styles.statItem}>
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Pendentes</Text>
-                  <Text variant="bodyLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>{intDash.pendingOrdersCount}</Text>
-                </View>
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="finance" size={32} color="#000" />
               </View>
-            </Surface>
-          ))}
-        </View>
-      )}
+            </View>
+            <View style={styles.mainCardFooter}>
+              <MaterialCommunityIcons name="information-outline" size={16} color="rgba(0,0,0,0.6)" style={{ marginRight: 4 }} />
+              <Text style={{ color: 'rgba(0,0,0,0.6)', fontWeight: '700', fontSize: 13 }}>
+                Referente ao período selecionado
+              </Text>
+            </View>
+          </LinearGradient>
+        )}
 
-    </ScrollView>
+        {/* Cards Secundários (Hoje e Mês) */}
+        {gd && (
+          <View style={styles.row}>
+            <Surface style={[styles.secondaryCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+              <View style={styles.cardHeader}>
+                <MaterialCommunityIcons name="calendar-today" size={20} color={theme.colors.primary} />
+                <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8 }}>Hoje</Text>
+              </View>
+              <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8 }}>
+                {formatMoney(gd.billingToday, gd.currency)}
+              </Text>
+            </Surface>
+
+            <Surface style={[styles.secondaryCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+              <View style={styles.cardHeader}>
+                <MaterialCommunityIcons name="calendar-month" size={20} color={theme.colors.primary} />
+                <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8 }}>Mês Atual</Text>
+              </View>
+              <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8 }}>
+                {formatMoney(gd.billingMonth, gd.currency)}
+              </Text>
+            </Surface>
+          </View>
+        )}
+
+        {/* Gráfico */}
+        {gd && (
+          <View style={styles.sectionContainer}>
+            <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
+              Evolução Diária
+            </Text>
+            <Surface style={[styles.chartCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+              <BarChart
+                data={chartData}
+                barWidth={22}
+                noOfSections={4}
+                barBorderRadius={4}
+                frontColor={theme.colors.primary}
+                yAxisThickness={0}
+                xAxisThickness={0}
+                yAxisTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 10 }}
+                xAxisLabelTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 10 }}
+                height={200}
+                width={screenWidth - 64}
+                initialSpacing={10}
+                spacing={20}
+                isAnimated
+                hideRules
+              />
+            </Surface>
+          </View>
+        )}
+
+        {/* Métricas em Grid */}
+        {gd && (
+          <View style={styles.sectionContainer}>
+            <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
+              Performance
+            </Text>
+            <View style={styles.gridContainer}>
+              <MetricItem
+                label="Pedidos Criados"
+                value={gd.createdOrdersCount}
+                icon="shopping-outline"
+                theme={theme}
+              />
+              <MetricItem
+                label="Vendas Pagas"
+                value={gd.paidOrdersCount}
+                icon="check-circle-outline"
+                color={theme.colors.primary}
+                theme={theme}
+              />
+              <MetricItem
+                label="Pendentes"
+                value={gd.pendingOrdersCount}
+                icon="clock-time-four-outline"
+                color={gd.pendingOrdersCount > 0 ? '#FFB800' : theme.colors.onSurfaceVariant}
+                theme={theme}
+              />
+              <MetricItem
+                label="Ticket Médio"
+                value={formatMoney(gd.averageTicketValue, gd.currency)}
+                icon="cash-multiple"
+                theme={theme}
+                isMoney
+              />
+              <MetricItem
+                label="Conversão"
+                value={`${gd.conversionRate}%`}
+                icon="chart-line-variant"
+                color={gd.conversionRate > 10 ? theme.colors.primary : '#FFB800'}
+                theme={theme}
+                fullWidth
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Dashboards Internacionais */}
+        {data?.internationalDashboards && data.internationalDashboards.length > 0 && (
+          <View style={styles.sectionContainer}>
+            <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
+              Internacional
+            </Text>
+            {data.internationalDashboards.map((intDash, index) => (
+              <Surface key={index} style={[styles.internationalCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+                <View style={styles.internationalHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Avatar.Icon icon="earth" size={32} style={{ backgroundColor: theme.colors.primaryContainer }} color={theme.colors.primary} />
+                    <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginLeft: 12 }}>
+                      {intDash.currency}
+                    </Text>
+                  </View>
+                  <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
+                    {formatMoney(intDash.billing, intDash.currency)}
+                  </Text>
+                </View>
+                <Divider style={{ marginVertical: 12, backgroundColor: theme.colors.outline, opacity: 0.2 }} />
+                <View style={styles.internationalStats}>
+                  <View style={styles.statItem}>
+                    <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Vendas</Text>
+                    <Text variant="bodyLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>{intDash.paidOrdersCount}</Text>
+                  </View>
+                  <View style={styles.statItem}>
+                    <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Pendentes</Text>
+                    <Text variant="bodyLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>{intDash.pendingOrdersCount}</Text>
+                  </View>
+                </View>
+              </Surface>
+            ))}
+          </View>
+        )}
+
+      </ScrollView>
+
+      {/* Date Picker Modal */}
+      {showPicker && (
+        <DateTimePicker
+          testID="dateTimePicker"
+          value={pickerMode === 'init' ? initDate : finishDate}
+          mode="date"
+          is24Hour={true}
+          display="default"
+          onChange={onChangeDate}
+          themeVariant="dark"
+        />
+      )}
+    </View>
   );
 }
 
@@ -295,6 +373,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
     marginBottom: 24,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: 'rgba(0, 230, 118, 0.1)',
   },
   mainCard: {
     borderRadius: 24,
