@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { ActivityIndicator, Avatar, Divider, Surface, Text, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Importe seus serviços e tipos
 import api from '@/services/api';
@@ -119,10 +120,10 @@ export default function DashboardScreen() {
   })) || [];
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={[styles.container, { backgroundColor: theme.colors.background }]}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 30 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
         }
@@ -339,7 +340,7 @@ export default function DashboardScreen() {
           themeVariant="dark"
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
