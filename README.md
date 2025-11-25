@@ -1,50 +1,87 @@
-# Welcome to your Expo app 👋
+# Botvips Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo móvel para gerenciamento e visualização de métricas de vendas, desenvolvido com Expo e React Native.
 
-## Get started
+## 🚀 Funcionalidades
 
-1. Install dependencies
+- **Dashboard de Vendas**: Visualização de faturamento diário, mensal e métricas de vendas.
+- **Gráficos Interativos**: Acompanhamento visual de desempenho.
+- **Autenticação**: Login seguro para acesso aos dados.
+- **Notificações**: Recebimento de alertas e atualizações.
+- **Filtros de Data**: Seleção de períodos personalizados para análise.
 
-   ```bash
-   npm install
-   ```
+## 🛠️ Tecnologias Utilizadas
 
-2. Start the app
+- **Core**: [React Native](https://reactnative.dev/), [Expo](https://expo.dev/)
+- **Linguagem**: [TypeScript](https://www.typescriptlang.org/)
+- **UI/UX**: [React Native Paper](https://callstack.github.io/react-native-paper/), [Lucide React Native](https://lucide.dev/guide/packages/lucide-react-native)
+- **Gráficos**: [React Native Gifted Charts](https://github.com/Abhinandan-Kushwaha/react-native-gifted-charts)
+- **Animações**: [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/)
+- **Navegação**: [Expo Router](https://docs.expo.dev/router/introduction)
+- **HTTP Client**: [Axios](https://axios-http.com/)
 
-   ```bash
-   npx expo start
-   ```
+## 📦 Pré-requisitos
 
-In the output, you'll find options to open the app in a
+Antes de começar, certifique-se de ter instalado:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- [Node.js](https://nodejs.org/) (LTS recomendado)
+- [Git](https://git-scm.com/)
+- [Expo Go](https://expo.dev/client) no seu dispositivo físico ou um emulador Android/iOS configurado.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🔧 Instalação
 
-## Get a fresh project
-
-When you're ready, run:
+1. Clone o repositório:
 
 ```bash
-npm run reset-project
+git clone <url-do-repositorio>
+cd botvips-mobile
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Instale as dependências:
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## ▶️ Como Rodar
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Para iniciar o servidor de desenvolvimento:
 
-## Join the community
+```bash
+npx expo start
+```
 
-Join our community of developers creating universal apps.
+Isso abrirá um QR code no terminal.
+- **Android**: Pressione `a` ou escaneie com o app Expo Go.
+- **iOS**: Pressione `i` ou escaneie com o app da câmera (requer Expo Go).
+- **Web**: Pressione `w`.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 📂 Estrutura do Projeto
+
+O projeto segue uma estrutura organizada para facilitar a manutenção:
+
+```
+botvips-mobile/
+├── app/                # Rotas e telas (Expo Router)
+├── src/
+│   ├── components/     # Componentes reutilizáveis
+│   ├── constants/      # Constantes e temas
+│   ├── context/        # Contextos da aplicação (Auth, etc.)
+│   ├── services/       # Serviços de API e lógica de negócios
+│   ├── styles/         # Estilos globais
+│   └── types/          # Definições de tipos TypeScript
+├── assets/             # Imagens e fontes
+└── ...
+```
+
+## 📜 Scripts Disponíveis
+
+- `npm start`: Inicia o servidor Expo.
+- `npm run android`: Roda o app no emulador Android.
+- `npm run ios`: Roda o app no simulador iOS.
+- `npm run web`: Roda o app no navegador.
+- `npm run lint`: Executa a verificação de linting.
+
+---
+
+Desenvolvido com ❤️
