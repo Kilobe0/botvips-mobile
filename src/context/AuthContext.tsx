@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../services/api';
+import { registerForPushNotificationsAsync, sendPushTokenToBackend } from '../services/notificationService';
 import { User } from '../types/api';
 
 interface AuthContextData {
@@ -19,42 +20,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     async function loadStorageData() {
-      console.log('[AuthContext] Loading stored data...');
+      // console.log('[AuthContext] Loading stored data...');
       const storedUser = await SecureStore.getItemAsync('user_data');
       const storedToken = await SecureStore.getItemAsync('user_token');
 
       if (storedUser && storedToken) {
-        console.log('[AuthContext] Found stored user session');
-        setUser(JSON.parse(storedUser));
+        // console.log('[AuthContext] Found stored user session');
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+
+        // Re-registra o push token se houver sessão salva
+        // console.log('[AuthContext] Re-registering push token for restored session...');
+        registerForPushNotificationsAsync().then(token => {
+          if (token && userData.email) {
+            sendPushTokenToBackend(userData.email, token);
+          }
+        }).catch(err => {
+          console.error('[AuthContext] Failed to re-register push token:', err);
+        });
       } else {
-        console.log('[AuthContext] No stored session found');
+        // console.log('[AuthContext] No stored session found');
       }
       setLoading(false);
-      console.log('[AuthContext] Loading complete');
+      // console.log('[AuthContext] Loading complete');
     }
     loadStorageData();
   }, []);
 
   async function signIn(email: string, password: string) {
     try {
-      console.log('[AuthContext] Starting signIn API call...');
+      // console.log('[AuthContext] Starting signIn API call...');
       // ATENÇÃO: Endpoint conforme sua documentação (singin com 'g')
       const response = await api.post('/user/singin', { email, password });
 
-      console.log('[AuthContext] API call successful');
-      const userData = response.data;
 
       // Salva sessão
       await SecureStore.setItemAsync('user_token', userData.token);
       await SecureStore.setItemAsync('user_data', JSON.stringify(userData));
 
-      console.log('[AuthContext] Session saved, updating user state');
+      // console.log('[AuthContext] Session saved, updating user state');
       setUser(userData);
-      console.log('[AuthContext] User state updated');
+      // console.log('[AuthContext] User state updated');
 
       // Registrar Push Notification após login com sucesso (não bloqueante)
       // Executa em background para não travar a tela de login
-      console.log('[AuthContext] Starting push notification registration (non-blocking)...');
+      // console.log('[AuthContext] Starting push notification registration (non-blocking)...');
+      registerForPushNotificationsAsync().then(token => {
+        if (token) {
+          sendPushTokenToBackend(email, token);
+        }
+      }).catch(err => {
+        console.error('[AuthContext] Failed to register push notifications:', err);
+      });
 
     } catch (error) {
       console.error('[AuthContext] SignIn error:', error);

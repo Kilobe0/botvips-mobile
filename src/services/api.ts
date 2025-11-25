@@ -21,4 +21,12 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Função para registrar Push Token no backend
+export const registerPushToken = async (email: string, pushToken: string) => {
+  return api.post('/user/record/push-token', {
+    usermail: email, // Backend espera "usermail", não "email"
+    pushToken
+  });
+};
+
 export default api;

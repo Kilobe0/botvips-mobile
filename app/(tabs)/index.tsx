@@ -1,19 +1,20 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, Dimensions } from 'react-native';
-import { Text, Card, ActivityIndicator, useTheme, Avatar, Divider } from 'react-native-paper';
-import { BarChart } from 'react-native-gifted-charts';
-import { startOfMonth, endOfMonth, format } from 'date-fns';
+import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Dimensions, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { BarChart } from 'react-native-gifted-charts';
+import { ActivityIndicator, Avatar, Card, Divider, Text, useTheme } from 'react-native-paper';
 
 // Importe seus serviços e tipos
 import api from '@/services/api';
 import { DashboardResult } from '@/types/api';
 
-// Helper local para formatar moeda (Cents -> BRL)
-const formatMoney = (cents: number) => {
-  return new Intl.NumberFormat('pt-BR', {
+// Helper local para formatar moeda (Cents -> Currency)
+const formatMoney = (cents: number, currency: string = 'BRL') => {
+  const locale = currency === 'BRL' ? 'pt-BR' : 'en-US';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'BRL'
+    currency: currency
   }).format(cents / 100);
 };
 
@@ -79,7 +80,7 @@ export default function DashboardScreen() {
     frontColor: theme.colors.primary,
     topLabelComponent: () => (
       <Text style={{ color: theme.colors.onSurface, fontSize: 10, marginBottom: 4 }}>
-        {formatMoney(g.value / 100)}
+        {formatMoney(g.value, gd.currency)}
       </Text>
     ),
   }));
@@ -108,7 +109,7 @@ export default function DashboardScreen() {
           <Card.Content>
             <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Hoje</Text>
             <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
-              {formatMoney(gd.billingToday)}
+              {formatMoney(gd.billingToday, gd.currency)}
             </Text>
           </Card.Content>
         </Card>
@@ -117,16 +118,31 @@ export default function DashboardScreen() {
           <Card.Content>
             <Text variant="labelSmall" style={{ color: theme.colors.primary }}>Mês Atual</Text>
             <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
-              {formatMoney(gd.billingMonth)}
+              {formatMoney(gd.billingMonth, gd.currency)}
             </Text>
           </Card.Content>
         </Card>
       </View>
 
+      {/* Card de Faturamento Total do Período */}
+      <Card style={[styles.fullCard, { backgroundColor: theme.colors.secondaryContainer }]}>
+        <Card.Content>
+          <View style={styles.totalBillingRow}>
+            <View>
+              <Text variant="labelMedium" style={{ color: theme.colors.onSecondaryContainer }}>Faturamento Total (Período)</Text>
+              <Text variant="headlineMedium" style={{ fontWeight: 'bold', color: theme.colors.onSecondaryContainer, marginTop: 8 }}>
+                {formatMoney(gd.billing, gd.currency)}
+              </Text>
+            </View>
+            <Avatar.Icon icon="cash-multiple" size={48} style={{ backgroundColor: theme.colors.secondary }} color={theme.colors.onSecondary} />
+          </View>
+        </Card.Content>
+      </Card>
+
       {/* Gráfico */}
       <Card style={[styles.sectionCard, { backgroundColor: theme.colors.surface }]}>
-        <Card.Title 
-          title="Evolução Diária" 
+        <Card.Title
+          title="Evolução Diária"
           titleStyle={{ color: theme.colors.onSurface, fontWeight: 'bold', fontSize: 18 }}
         />
         <Card.Content>
@@ -152,40 +168,86 @@ export default function DashboardScreen() {
 
       {/* Lista de Métricas */}
       <Card style={[styles.sectionCard, { backgroundColor: theme.colors.surface }]}>
-        <Card.Title 
-          title="Performance" 
+        <Card.Title
+          title="Performance"
           titleStyle={{ color: theme.colors.onSurface, fontWeight: 'bold' }}
           left={(props) => <Avatar.Icon {...props} icon="chart-line" style={{ backgroundColor: theme.colors.surfaceVariant }} color={theme.colors.primary} />}
         />
         <Card.Content>
-          
+
           <MetricRow label="Pedidos Criados" value={gd.createdOrdersCount} theme={theme} />
           <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
-          
-          <MetricRow label="Vendas Pagas" value={gd.paidOrdersCount} theme={theme} />
+
+          <MetricRow label="Vendas Pagas" value={gd.paidOrdersCount} theme={theme} icon="check-circle" />
           <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
-          
-          <MetricRow label="Ticket Médio" value={formatMoney(gd.averageTicketValue)} theme={theme} />
-          <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
-          
-          <MetricRow 
-            label="Taxa de Conversão" 
-            value={`${gd.conversionRate}%`} 
-            color={gd.conversionRate > 10 ? theme.colors.primary : '#FFB800'} 
+
+          <MetricRow
+            label="Pedidos Pendentes"
+            value={gd.pendingOrdersCount}
             theme={theme}
+            icon="clock-outline"
+            color={gd.pendingOrdersCount > 0 ? '#FFB800' : theme.colors.onSurfaceVariant}
+          />
+          <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
+
+          <MetricRow label="Ticket Médio" value={formatMoney(gd.averageTicketValue, gd.currency)} theme={theme} icon="currency-usd" />
+          <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
+
+          <MetricRow
+            label="Taxa de Conversão"
+            value={`${gd.conversionRate}%`}
+            color={gd.conversionRate > 10 ? theme.colors.primary : '#FFB800'}
+            theme={theme}
+            icon="chart-line-variant"
           />
 
         </Card.Content>
       </Card>
+
+      {/* Dashboards Internacionais (Se houver) */}
+      {data.internationalDashboards && data.internationalDashboards.length > 0 && (
+        <Card style={[styles.sectionCard, { backgroundColor: theme.colors.surface }]}>
+          <Card.Title
+            title="Vendas Internacionais"
+            titleStyle={{ color: theme.colors.onSurface, fontWeight: 'bold' }}
+            left={(props) => <Avatar.Icon {...props} icon="earth" style={{ backgroundColor: theme.colors.surfaceVariant }} color={theme.colors.primary} />}
+          />
+          <Card.Content>
+            {data.internationalDashboards.map((intDash, index) => (
+              <View key={index}>
+                <View style={styles.internationalRow}>
+                  <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+                    {intDash.currency}
+                  </Text>
+                  <Text variant="bodyLarge" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
+                    {formatMoney(intDash.billing, intDash.currency)}
+                  </Text>
+                </View>
+                <View style={styles.internationalDetails}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Vendas: {intDash.paidOrdersCount} | Pendentes: {intDash.pendingOrdersCount}
+                  </Text>
+                </View>
+                {index < data.internationalDashboards.length - 1 && (
+                  <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2, marginVertical: 8 }} />
+                )}
+              </View>
+            ))}
+          </Card.Content>
+        </Card>
+      )}
 
     </ScrollView>
   );
 }
 
 // Componente auxiliar para linhas de métricas
-const MetricRow = ({ label, value, color, theme }: any) => (
+const MetricRow = ({ label, value, color, theme, icon }: any) => (
   <View style={styles.metricRow}>
-    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>{label}</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {icon && <Avatar.Icon icon={icon} size={24} style={{ backgroundColor: 'transparent' }} color={theme.colors.onSurfaceVariant} />}
+      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>{label}</Text>
+    </View>
     <Text variant="bodyLarge" style={{ fontWeight: 'bold', color: color || theme.colors.onSurface }}>
       {value}
     </Text>
@@ -224,5 +286,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 12,
+  },
+  fullCard: {
+    marginBottom: 24,
+    borderRadius: 16,
+  },
+  totalBillingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  internationalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  internationalDetails: {
+    paddingBottom: 8,
   },
 });
