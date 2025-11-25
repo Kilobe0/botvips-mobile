@@ -1,9 +1,11 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
-import { ActivityIndicator, Avatar, Card, Divider, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Avatar, Divider, Surface, Text, useTheme } from 'react-native-paper';
 
 // Importe seus serviços e tipos
 import api from '@/services/api';
@@ -79,8 +81,8 @@ export default function DashboardScreen() {
     label: format(new Date(g.label), 'dd', { locale: ptBR }), // Dia do mês
     frontColor: theme.colors.primary,
     topLabelComponent: () => (
-      <Text style={{ color: theme.colors.onSurface, fontSize: 10, marginBottom: 4 }}>
-        {formatMoney(g.value, gd.currency)}
+      <Text style={{ color: theme.colors.onSurface, fontSize: 10, marginBottom: 4, fontWeight: 'bold' }}>
+        {formatMoney(g.value, gd.currency).replace('R$', '').trim()}
       </Text>
     ),
   }));
@@ -88,170 +90,193 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ paddingBottom: 100 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
       }
     >
       {/* Cabeçalho */}
       <View style={styles.header}>
-        <Text variant="headlineMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
-          Visão Geral
-        </Text>
-        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-          {format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
-        </Text>
+        <View>
+          <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
+            Olá, Empreendedor!
+          </Text>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            Resumo de {format(new Date(), "MMMM 'de' yyyy", { locale: ptBR })}
+          </Text>
+        </View>
+        <Avatar.Image size={40} source={{ uri: 'https://i.pravatar.cc/150' }} />
       </View>
 
-      {/* Cards de Faturamento */}
-      <View style={styles.row}>
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <Card.Content>
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Hoje</Text>
-            <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
-              {formatMoney(gd.billingToday, gd.currency)}
+      {/* Card Principal - Faturamento Total */}
+      <LinearGradient
+        colors={[theme.colors.primary, '#00b359']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.mainCard}
+      >
+        <View style={styles.mainCardContent}>
+          <View>
+            <Text style={{ color: '#000', opacity: 0.8, fontWeight: '600' }}>Faturamento Total</Text>
+            <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#000', marginTop: 4 }}>
+              {formatMoney(gd.billing, gd.currency)}
             </Text>
-          </Card.Content>
-        </Card>
-
-        <Card style={[styles.card, { backgroundColor: theme.colors.primaryContainer }]}>
-          <Card.Content>
-            <Text variant="labelSmall" style={{ color: theme.colors.primary }}>Mês Atual</Text>
-            <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
-              {formatMoney(gd.billingMonth, gd.currency)}
-            </Text>
-          </Card.Content>
-        </Card>
-      </View>
-
-      {/* Card de Faturamento Total do Período */}
-      <Card style={[styles.fullCard, { backgroundColor: theme.colors.secondaryContainer }]}>
-        <Card.Content>
-          <View style={styles.totalBillingRow}>
-            <View>
-              <Text variant="labelMedium" style={{ color: theme.colors.onSecondaryContainer }}>Faturamento Total (Período)</Text>
-              <Text variant="headlineMedium" style={{ fontWeight: 'bold', color: theme.colors.onSecondaryContainer, marginTop: 8 }}>
-                {formatMoney(gd.billing, gd.currency)}
-              </Text>
-            </View>
-            <Avatar.Icon icon="cash-multiple" size={48} style={{ backgroundColor: theme.colors.secondary }} color={theme.colors.onSecondary} />
           </View>
-        </Card.Content>
-      </Card>
+          <View style={styles.iconContainer}>
+            <MaterialCommunityIcons name="finance" size={32} color="#000" />
+          </View>
+        </View>
+        <View style={styles.mainCardFooter}>
+          <Text style={{ color: '#000', opacity: 0.7, fontSize: 12 }}>
+            Referente ao período selecionado
+          </Text>
+        </View>
+      </LinearGradient>
+
+      {/* Cards Secundários (Hoje e Mês) */}
+      <View style={styles.row}>
+        <Surface style={[styles.secondaryCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+          <View style={styles.cardHeader}>
+            <MaterialCommunityIcons name="calendar-today" size={20} color={theme.colors.primary} />
+            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8 }}>Hoje</Text>
+          </View>
+          <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8 }}>
+            {formatMoney(gd.billingToday, gd.currency)}
+          </Text>
+        </Surface>
+
+        <Surface style={[styles.secondaryCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+          <View style={styles.cardHeader}>
+            <MaterialCommunityIcons name="calendar-month" size={20} color={theme.colors.primary} />
+            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8 }}>Mês Atual</Text>
+          </View>
+          <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8 }}>
+            {formatMoney(gd.billingMonth, gd.currency)}
+          </Text>
+        </Surface>
+      </View>
 
       {/* Gráfico */}
-      <Card style={[styles.sectionCard, { backgroundColor: theme.colors.surface }]}>
-        <Card.Title
-          title="Evolução Diária"
-          titleStyle={{ color: theme.colors.onSurface, fontWeight: 'bold', fontSize: 18 }}
-        />
-        <Card.Content>
-          <View style={{ overflow: 'hidden', marginLeft: -20 }}>
-            <BarChart
-              data={chartData}
-              barWidth={22}
-              noOfSections={4}
-              barBorderRadius={4}
-              frontColor={theme.colors.primary}
-              yAxisThickness={0}
-              xAxisThickness={0}
-              yAxisTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 10 }}
-              xAxisLabelTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 10 }}
-              height={200}
-              width={screenWidth - 80} // Ajuste para caber no card
-              initialSpacing={20}
-              isAnimated
-            />
-          </View>
-        </Card.Content>
-      </Card>
-
-      {/* Lista de Métricas */}
-      <Card style={[styles.sectionCard, { backgroundColor: theme.colors.surface }]}>
-        <Card.Title
-          title="Performance"
-          titleStyle={{ color: theme.colors.onSurface, fontWeight: 'bold' }}
-          left={(props) => <Avatar.Icon {...props} icon="chart-line" style={{ backgroundColor: theme.colors.surfaceVariant }} color={theme.colors.primary} />}
-        />
-        <Card.Content>
-
-          <MetricRow label="Pedidos Criados" value={gd.createdOrdersCount} theme={theme} />
-          <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
-
-          <MetricRow label="Vendas Pagas" value={gd.paidOrdersCount} theme={theme} icon="check-circle" />
-          <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
-
-          <MetricRow
-            label="Pedidos Pendentes"
-            value={gd.pendingOrdersCount}
-            theme={theme}
-            icon="clock-outline"
-            color={gd.pendingOrdersCount > 0 ? '#FFB800' : theme.colors.onSurfaceVariant}
+      <View style={styles.sectionContainer}>
+        <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
+          Evolução Diária
+        </Text>
+        <Surface style={[styles.chartCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+          <BarChart
+            data={chartData}
+            barWidth={22}
+            noOfSections={4}
+            barBorderRadius={4}
+            frontColor={theme.colors.primary}
+            yAxisThickness={0}
+            xAxisThickness={0}
+            yAxisTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 10 }}
+            xAxisLabelTextStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 10 }}
+            height={200}
+            width={screenWidth - 64}
+            initialSpacing={10}
+            spacing={20}
+            isAnimated
+            hideRules
           />
-          <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
+        </Surface>
+      </View>
 
-          <MetricRow label="Ticket Médio" value={formatMoney(gd.averageTicketValue, gd.currency)} theme={theme} icon="currency-usd" />
-          <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2 }} />
-
-          <MetricRow
-            label="Taxa de Conversão"
+      {/* Métricas em Grid */}
+      <View style={styles.sectionContainer}>
+        <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
+          Performance
+        </Text>
+        <View style={styles.gridContainer}>
+          <MetricItem
+            label="Pedidos Criados"
+            value={gd.createdOrdersCount}
+            icon="shopping-outline"
+            theme={theme}
+          />
+          <MetricItem
+            label="Vendas Pagas"
+            value={gd.paidOrdersCount}
+            icon="check-circle-outline"
+            color={theme.colors.primary}
+            theme={theme}
+          />
+          <MetricItem
+            label="Pendentes"
+            value={gd.pendingOrdersCount}
+            icon="clock-time-four-outline"
+            color={gd.pendingOrdersCount > 0 ? '#FFB800' : theme.colors.onSurfaceVariant}
+            theme={theme}
+          />
+          <MetricItem
+            label="Ticket Médio"
+            value={formatMoney(gd.averageTicketValue, gd.currency)}
+            icon="cash-multiple"
+            theme={theme}
+            isMoney
+          />
+          <MetricItem
+            label="Conversão"
             value={`${gd.conversionRate}%`}
+            icon="chart-line-variant"
             color={gd.conversionRate > 10 ? theme.colors.primary : '#FFB800'}
             theme={theme}
-            icon="chart-line-variant"
+            fullWidth
           />
+        </View>
+      </View>
 
-        </Card.Content>
-      </Card>
-
-      {/* Dashboards Internacionais (Se houver) */}
+      {/* Dashboards Internacionais */}
       {data.internationalDashboards && data.internationalDashboards.length > 0 && (
-        <Card style={[styles.sectionCard, { backgroundColor: theme.colors.surface }]}>
-          <Card.Title
-            title="Vendas Internacionais"
-            titleStyle={{ color: theme.colors.onSurface, fontWeight: 'bold' }}
-            left={(props) => <Avatar.Icon {...props} icon="earth" style={{ backgroundColor: theme.colors.surfaceVariant }} color={theme.colors.primary} />}
-          />
-          <Card.Content>
-            {data.internationalDashboards.map((intDash, index) => (
-              <View key={index}>
-                <View style={styles.internationalRow}>
-                  <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: 'bold' }}>
+        <View style={styles.sectionContainer}>
+          <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginBottom: 16 }}>
+            Internacional
+          </Text>
+          {data.internationalDashboards.map((intDash, index) => (
+            <Surface key={index} style={[styles.internationalCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+              <View style={styles.internationalHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Avatar.Icon icon="earth" size={32} style={{ backgroundColor: theme.colors.primaryContainer }} color={theme.colors.primary} />
+                  <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginLeft: 12 }}>
                     {intDash.currency}
                   </Text>
-                  <Text variant="bodyLarge" style={{ color: theme.colors.primary, fontWeight: 'bold' }}>
-                    {formatMoney(intDash.billing, intDash.currency)}
-                  </Text>
                 </View>
-                <View style={styles.internationalDetails}>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Vendas: {intDash.paidOrdersCount} | Pendentes: {intDash.pendingOrdersCount}
-                  </Text>
-                </View>
-                {index < data.internationalDashboards.length - 1 && (
-                  <Divider style={{ backgroundColor: theme.colors.outline, opacity: 0.2, marginVertical: 8 }} />
-                )}
+                <Text variant="titleMedium" style={{ fontWeight: 'bold', color: theme.colors.primary }}>
+                  {formatMoney(intDash.billing, intDash.currency)}
+                </Text>
               </View>
-            ))}
-          </Card.Content>
-        </Card>
+              <Divider style={{ marginVertical: 12, backgroundColor: theme.colors.outline, opacity: 0.2 }} />
+              <View style={styles.internationalStats}>
+                <View style={styles.statItem}>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Vendas</Text>
+                  <Text variant="bodyLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>{intDash.paidOrdersCount}</Text>
+                </View>
+                <View style={styles.statItem}>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Pendentes</Text>
+                  <Text variant="bodyLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>{intDash.pendingOrdersCount}</Text>
+                </View>
+              </View>
+            </Surface>
+          ))}
+        </View>
       )}
 
     </ScrollView>
   );
 }
 
-// Componente auxiliar para linhas de métricas
-const MetricRow = ({ label, value, color, theme, icon }: any) => (
-  <View style={styles.metricRow}>
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      {icon && <Avatar.Icon icon={icon} size={24} style={{ backgroundColor: 'transparent' }} color={theme.colors.onSurfaceVariant} />}
-      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>{label}</Text>
+const MetricItem = ({ label, value, icon, color, theme, fullWidth }: any) => (
+  <Surface style={[styles.metricCard, { backgroundColor: theme.colors.surface, width: fullWidth ? '100%' : '48%' }]} elevation={1}>
+    <View style={styles.metricHeader}>
+      <MaterialCommunityIcons name={icon} size={24} color={color || theme.colors.onSurfaceVariant} />
     </View>
-    <Text variant="bodyLarge" style={{ fontWeight: 'bold', color: color || theme.colors.onSurface }}>
+    <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8, fontSize: 20 }}>
       {value}
     </Text>
-  </View>
+    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+      {label}
+    </Text>
+  </Surface>
 );
 
 const styles = StyleSheet.create({
@@ -265,44 +290,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 20,
     marginBottom: 24,
   },
-  row: {
+  mainCard: {
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 24,
+    elevation: 4,
+    shadowColor: '#00E676',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  mainCardContent: {
     flexDirection: 'row',
-    gap: 12,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 24,
   },
-  card: {
-    flex: 1,
+  iconContainer: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 8,
     borderRadius: 12,
   },
-  sectionCard: {
+  mainCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 24,
+  },
+  secondaryCard: {
+    width: '48%',
+    padding: 16,
     borderRadius: 16,
   },
-  metricRow: {
+  cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
   },
-  fullCard: {
+  sectionContainer: {
     marginBottom: 24,
+  },
+  chartCard: {
+    padding: 16,
     borderRadius: 16,
+    alignItems: 'center',
   },
-  totalBillingRow: {
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  metricCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 0,
+  },
+  metricHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  internationalCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+  },
+  internationalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  internationalRow: {
+  internationalStats: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
+    justifyContent: 'space-around',
   },
-  internationalDetails: {
-    paddingBottom: 8,
+  statItem: {
+    alignItems: 'center',
   },
 });
