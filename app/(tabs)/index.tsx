@@ -132,7 +132,7 @@ export default function DashboardScreen() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
-              Olá, Empreendedor!
+              Olá, Usuário!
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 12 }}>
               <TouchableOpacity
@@ -158,8 +158,6 @@ export default function DashboardScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
-          <Avatar.Image size={40} source={{ uri: 'https://i.pravatar.cc/150' }} />
         </View>
 
         {/* Card Principal - Faturamento Total */}
