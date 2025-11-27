@@ -55,11 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
       // Salva sessão
-      await SecureStore.setItemAsync('user_token', userData.token);
-      await SecureStore.setItemAsync('user_data', JSON.stringify(userData));
+      await SecureStore.setItemAsync('user_token', response.data.token);
+      await SecureStore.setItemAsync('user_data', JSON.stringify(response.data));
 
       // console.log('[AuthContext] Session saved, updating user state');
-      setUser(userData);
+      setUser(response.data);
       // console.log('[AuthContext] User state updated');
 
       // Registrar Push Notification após login com sucesso (não bloqueante)
