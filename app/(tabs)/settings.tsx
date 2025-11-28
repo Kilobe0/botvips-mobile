@@ -1,5 +1,7 @@
+import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +10,8 @@ import { registerForPushNotificationsAsync } from '../../src/services/notificati
 export default function SettingsScreen() {
     const [pushToken, setPushToken] = useState<string | undefined>('');
     const [loading, setLoading] = useState(false);
+    const { signOut } = useAuth();
+    const router = useRouter();
 
     useEffect(() => {
         loadPushToken();
@@ -30,6 +34,24 @@ export default function SettingsScreen() {
             await Clipboard.setStringAsync(pushToken);
             Alert.alert('Sucesso', 'Token copiado para a área de transferência!');
         }
+    };
+
+    const handleLogout = () => {
+        Alert.alert(
+            'Sair da conta',
+            'Tem certeza que deseja sair?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Sair',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await signOut();
+                        router.replace('/(auth)/login');
+                    },
+                },
+            ]
+        );
     };
 
     return (
@@ -55,6 +77,16 @@ export default function SettingsScreen() {
                             <Text style={styles.buttonText}>Copiar Token</Text>
                         </TouchableOpacity>
                     </View>
+                </View>
+
+                {/* Seção Conta */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Conta</Text>
+
+                    <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                        <Ionicons name="log-out-outline" size={22} color="#FFF" style={styles.icon} />
+                        <Text style={styles.logoutButtonText}>Sair da conta</Text>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -134,5 +166,19 @@ const styles = StyleSheet.create({
     },
     icon: {
         marginRight: 8,
+    },
+    logoutButton: {
+        backgroundColor: '#E53E3E',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 12,
+    },
+    logoutButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: 16,
     },
 });

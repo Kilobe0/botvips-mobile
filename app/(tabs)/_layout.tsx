@@ -1,6 +1,6 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { useTheme } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function TabLayout() {
   const theme = useTheme();
@@ -26,12 +26,12 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Segunda aba (Ex: Configurações ou Histórico) */}
+      {/* Aba de Configurações */}
       <Tabs.Screen
-        name="explore"
+        name="settings"
         options={{
-          title: 'Explorar', // Mude para o que fizer sentido depois
-          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="compass" size={24} color={color} />,
+          title: 'Configurações',
+          tabBarIcon: ({ color }) => <MaterialCommunityIcons name="cog" size={24} color={color} />,
         }}
       />
     </Tabs>
