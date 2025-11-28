@@ -25,6 +25,7 @@ const formatMoney = (cents: number, currency: string = 'BRL') => {
 export default function DashboardScreen() {
   const theme = useTheme();
   const [data, setData] = useState<DashboardResult | null>(null);
+  const [currentPeriodData, setCurrentPeriodData] = useState<{ today: number; month: number; currency: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -36,7 +37,28 @@ export default function DashboardScreen() {
 
   const screenWidth = Dimensions.get('window').width;
 
-  // Função que busca os dados na API
+  // Função que busca os dados do mês atual (independente do filtro)
+  const loadCurrentMonthData = useCallback(async () => {
+    try {
+      const now = new Date();
+      const payload = {
+        botId: null,
+        initDate: startOfMonth(now).toISOString(),
+        finishDate: endOfMonth(now).toISOString()
+      };
+
+      const response = await api.post('/user/dashboard', payload);
+      setCurrentPeriodData({
+        today: response.data.generalDashboard.billingToday,
+        month: response.data.generalDashboard.billingMonth,
+        currency: response.data.generalDashboard.currency
+      });
+    } catch (error) {
+      console.error("Erro ao carregar dados do mês atual:", error);
+    }
+  }, []);
+
+  // Função que busca os dados na API (baseado no filtro)
   const loadDashboard = useCallback(async () => {
     try {
       const payload = {
@@ -49,12 +71,16 @@ export default function DashboardScreen() {
       setData(response.data);
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error);
-      // Aqui você poderia adicionar um Toast/Alert de erro
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [initDate, finishDate]);
+
+  // Carrega dados do mês atual apenas uma vez ao montar o componente
+  useEffect(() => {
+    loadCurrentMonthData();
+  }, [loadCurrentMonthData]);
 
   // Carrega ao abrir a tela e quando as datas mudam
   useEffect(() => {
@@ -65,6 +91,7 @@ export default function DashboardScreen() {
   // Função para o "Puxar para atualizar"
   const onRefresh = () => {
     setRefreshing(true);
+    loadCurrentMonthData(); // Atualiza também o mês atual no refresh
     loadDashboard();
   };
 
@@ -113,9 +140,11 @@ export default function DashboardScreen() {
     label: format(new Date(g.label), 'dd', { locale: ptBR }), // Dia do mês
     frontColor: theme.colors.primary,
     topLabelComponent: () => (
-      <Text style={{ color: theme.colors.onSurface, fontSize: 10, marginBottom: 4, fontWeight: 'bold' }}>
-        {formatMoney(g.value, gd.currency).replace('R$', '').trim()}
-      </Text>
+      <View style={{ width: 42, alignItems: 'center' }}>
+        <Text style={{ color: theme.colors.onSurface, fontSize: 9, marginBottom: 4, fontWeight: 'bold' }}>
+          {formatMoney(g.value, gd.currency).replace('R$', '').trim()}
+        </Text>
+      </View>
     ),
   })) || [];
 
@@ -190,7 +219,7 @@ export default function DashboardScreen() {
           </LinearGradient>
         )}
 
-        {/* Cards Secundários (Hoje e Mês) */}
+        {/* Cards Secundários (Hoje e Mês) - Sempre baseados no período atual */}
         {gd && (
           <View style={styles.row}>
             <Surface style={[styles.secondaryCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
@@ -199,7 +228,9 @@ export default function DashboardScreen() {
                 <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8 }}>Hoje</Text>
               </View>
               <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8 }}>
-                {formatMoney(gd.billingToday, gd.currency)}
+                {currentPeriodData
+                  ? formatMoney(currentPeriodData.today, currentPeriodData.currency)
+                  : formatMoney(gd.billingToday, gd.currency)}
               </Text>
             </Surface>
 
@@ -209,7 +240,9 @@ export default function DashboardScreen() {
                 <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8 }}>Mês Atual</Text>
               </View>
               <Text variant="titleLarge" style={{ fontWeight: 'bold', color: theme.colors.onSurface, marginTop: 8 }}>
-                {formatMoney(gd.billingMonth, gd.currency)}
+                {currentPeriodData
+                  ? formatMoney(currentPeriodData.month, currentPeriodData.currency)
+                  : formatMoney(gd.billingMonth, gd.currency)}
               </Text>
             </Surface>
           </View>
@@ -223,6 +256,7 @@ export default function DashboardScreen() {
             </Text>
             <Surface style={[styles.chartCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
               <BarChart
+                key={`${initDate.getTime()}-${finishDate.getTime()}`}
                 data={chartData}
                 barWidth={22}
                 noOfSections={4}
@@ -236,7 +270,6 @@ export default function DashboardScreen() {
                 width={screenWidth - 64}
                 initialSpacing={10}
                 spacing={20}
-                isAnimated
                 hideRules
               />
             </Surface>
@@ -428,6 +461,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     alignItems: 'center',
+    overflow: 'hidden',
   },
   gridContainer: {
     flexDirection: 'row',
