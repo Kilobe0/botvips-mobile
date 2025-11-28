@@ -4,7 +4,7 @@ import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { ActivityIndicator, Avatar, Divider, Surface, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -359,8 +359,8 @@ export default function DashboardScreen() {
 
       </ScrollView>
 
-      {/* Date Picker Modal */}
-      {showPicker && (
+      {/* Date Picker - Android */}
+      {showPicker && Platform.OS === 'android' && (
         <DateTimePicker
           testID="dateTimePicker"
           value={pickerMode === 'init' ? initDate : finishDate}
@@ -370,6 +370,40 @@ export default function DashboardScreen() {
           onChange={onChangeDate}
           themeVariant="dark"
         />
+      )}
+
+      {/* Date Picker - iOS (usando Modal para evitar deslocamento) */}
+      {Platform.OS === 'ios' && (
+        <Modal
+          visible={showPicker}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.iosPickerOverlay}>
+            <View style={[styles.iosPickerContainer, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.iosPickerHeader}>
+                <TouchableOpacity onPress={() => setShowPicker(false)}>
+                  <Text style={{ color: theme.colors.error, fontSize: 16 }}>Cancelar</Text>
+                </TouchableOpacity>
+                <Text style={{ color: theme.colors.onSurface, fontSize: 16, fontWeight: 'bold' }}>
+                  {pickerMode === 'init' ? 'Data Inicial' : 'Data Final'}
+                </Text>
+                <TouchableOpacity onPress={() => setShowPicker(false)}>
+                  <Text style={{ color: theme.colors.primary, fontSize: 16, fontWeight: 'bold' }}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={pickerMode === 'init' ? initDate : finishDate}
+                mode="date"
+                display="spinner"
+                onChange={onChangeDate}
+                themeVariant="dark"
+                style={{ height: 200 }}
+              />
+            </View>
+          </View>
+        </Modal>
       )}
     </SafeAreaView>
   );
@@ -495,5 +529,25 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: 'center',
+  },
+  // Estilos para o DatePicker no iOS
+  iosPickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  iosPickerContainer: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+  },
+  iosPickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
 });
