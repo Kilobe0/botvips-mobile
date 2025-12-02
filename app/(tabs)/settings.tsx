@@ -122,7 +122,6 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 12,
-        activeOpacity: 0.8,
     },
     buttonDisabled: {
         backgroundColor: '#A0AEC0',

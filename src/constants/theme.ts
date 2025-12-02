@@ -27,14 +27,20 @@ export const theme = {
 // Adicionando exports para compatibilidade com o template do Expo
 export const Colors = {
   light: {
+    text: '#11181C',
+    background: '#fff',
     tint: '#00E676',
-    tabIconDefault: '#ccc',
+    icon: '#687076',
+    tabIconDefault: '#687076',
     tabIconSelected: '#00E676',
   },
   dark: {
-    tint: '#fff',
-    tabIconDefault: '#ccc',
-    tabIconSelected: '#fff',
+    text: '#ECEDEE',
+    background: '#121212',
+    tint: '#00E676',
+    icon: '#9BA1A6',
+    tabIconDefault: '#9BA1A6',
+    tabIconSelected: '#00E676',
   },
 };
 
