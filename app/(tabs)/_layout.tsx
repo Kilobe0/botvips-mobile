@@ -26,10 +26,11 @@ export default function TabLayout() {
         }}
       />
 
-      {/* Aba de Configurações */}
+      {/* Aba de Configurações - Oculta temporariamente */}
       <Tabs.Screen
         name="settings"
         options={{
+          href: null, // Oculta da tab bar
           title: 'Configurações',
           tabBarIcon: ({ color }) => <MaterialCommunityIcons name="cog" size={24} color={color} />,
         }}
