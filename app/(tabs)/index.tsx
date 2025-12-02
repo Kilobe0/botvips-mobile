@@ -3,13 +3,15 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { endOfMonth, format, startOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, Modal, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, Modal, Platform, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
 import { ActivityIndicator, Avatar, Divider, Surface, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Importe seus serviços e tipos
+import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
 import { DashboardResult } from '@/types/api';
 
@@ -24,6 +26,8 @@ const formatMoney = (cents: number, currency: string = 'BRL') => {
 
 export default function DashboardScreen() {
   const theme = useTheme();
+  const { signOut } = useAuth();
+  const router = useRouter();
   const [data, setData] = useState<DashboardResult | null>(null);
   const [currentPeriodData, setCurrentPeriodData] = useState<{ today: number; month: number; currency: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +40,24 @@ export default function DashboardScreen() {
   const [pickerMode, setPickerMode] = useState<'init' | 'finish'>('init');
 
   const screenWidth = Dimensions.get('window').width;
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair da conta',
+      'Tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Sair',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            router.replace('/(auth)/login');
+          },
+        },
+      ]
+    );
+  };
 
   // Função que busca os dados do mês atual (independente do filtro)
   const loadCurrentMonthData = useCallback(async () => {
@@ -160,9 +182,14 @@ export default function DashboardScreen() {
         {/* Cabeçalho */}
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
-              Olá, Usuário!
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
+                Olá, Usuário!
+              </Text>
+              <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+                <MaterialCommunityIcons name="logout" size={22} color={theme.colors.onSurfaceVariant} />
+              </TouchableOpacity>
+            </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 12 }}>
               <TouchableOpacity
                 onPress={() => showDatePicker('init')}
@@ -448,6 +475,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     backgroundColor: 'rgba(0, 230, 118, 0.1)',
+  },
+  logoutButton: {
+    padding: 8,
   },
   mainCard: {
     borderRadius: 24,
