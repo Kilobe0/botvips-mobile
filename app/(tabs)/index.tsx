@@ -101,14 +101,18 @@ export default function DashboardScreen() {
 
   // Carrega dados do mês atual apenas uma vez ao montar o componente
   useEffect(() => {
+    // Não faz requisição se o usuário não estiver autenticado
+    if (!user) return;
     loadCurrentMonthData();
-  }, [loadCurrentMonthData]);
+  }, [loadCurrentMonthData, user]);
 
   // Carrega ao abrir a tela e quando as datas mudam
   useEffect(() => {
+    // Não faz requisição se o usuário não estiver autenticado
+    if (!user) return;
     setLoading(true);
     loadDashboard();
-  }, [loadDashboard]);
+  }, [loadDashboard, user]);
 
   // Função para o "Puxar para atualizar"
   const onRefresh = () => {
