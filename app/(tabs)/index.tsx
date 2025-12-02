@@ -26,7 +26,7 @@ const formatMoney = (cents: number, currency: string = 'BRL') => {
 
 export default function DashboardScreen() {
   const theme = useTheme();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<DashboardResult | null>(null);
   const [currentPeriodData, setCurrentPeriodData] = useState<{ today: number; month: number; currency: string } | null>(null);
@@ -184,7 +184,7 @@ export default function DashboardScreen() {
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text variant="headlineSmall" style={{ fontWeight: 'bold', color: theme.colors.onSurface }}>
-                Olá, Usuário!
+                Olá, {user?.name || 'Usuário'}!
               </Text>
               <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
                 <MaterialCommunityIcons name="logout" size={22} color={theme.colors.onSurfaceVariant} />
