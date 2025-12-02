@@ -1,6 +1,8 @@
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { registerPushToken } from './api';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -32,6 +34,7 @@ export async function registerForPushNotificationsAsync() {
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#FF231F7C',
+        sound: 'botvips_sound.mp3',
       });
     }
 
@@ -76,8 +79,32 @@ export async function registerForPushNotificationsAsync() {
   }
 }
 
+// Chave para armazenar o último token enviado
+const LAST_PUSH_TOKEN_KEY = 'last_push_token_sent';
+
 // Função para enviar o token ao backend
 export async function sendPushTokenToBackend(email: string, token: string) {
+  try {
+    // Recupera o último token enviado
+    const lastToken = await SecureStore.getItemAsync(LAST_PUSH_TOKEN_KEY);
+
+    // Se o token atual é igual ao último enviado, não precisa enviar novamente
+    if (lastToken === token) {
+      console.log('[NotificationService] Token já registrado no backend, pulando envio.');
+      return;
+    }
+
+    // Envia o novo token para o backend
+    console.log('[NotificationService] Enviando novo push token para o backend...');
+    await registerPushToken(email, token);
+
+    // Salva o token atual como o último enviado
+    await SecureStore.setItemAsync(LAST_PUSH_TOKEN_KEY, token);
+    console.log('[NotificationService] Push token registrado com sucesso!');
+  } catch (error) {
+    console.error('[NotificationService] Erro ao enviar push token:', error);
+    // Não lança erro para não interromper o fluxo de login
+  }
 }
 
 // Setup de listeners de notificação
