@@ -2,8 +2,8 @@ import { theme } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, StyleSheet, View, Image } from 'react-native'; // <--- Importei Image
-import { Button, Text, TextInput } from 'react-native-paper';
+import { Alert, Image, StyleSheet, View } from 'react-native'; // <--- Importei Image
+import { Button, TextInput } from 'react-native-paper';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -35,16 +35,11 @@ export default function Login() {
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       
       {/* LOGO SUBSTITUINDO O TEXTO */}
-      <Image 
-        source={{ uri: 'https://www.botvips.app/images/logo-botvips.png' }}
+      <Image
+        source={require('../../assets/images/logotipo.png')}
         style={styles.logo}
         resizeMode="contain"
       />
-
-      <Text variant="bodyLarge" style={{ textAlign: 'center', marginBottom: 40, color: theme.colors.onSurfaceVariant }}>
-        Gerencie suas vendas
-      </Text>
-
       <TextInput
         label="E-mail"
         value={email}
@@ -88,7 +83,7 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center' },
   logo: {
-    width: '100%',
+    width: '80%',
     height: 200,
     alignSelf: 'center',
     marginBottom: 10,

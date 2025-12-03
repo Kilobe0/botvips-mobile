@@ -4,6 +4,7 @@ import { setupNotificationListeners } from '@/services/notificationService';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { PaperProvider } from 'react-native-paper';
+import FabMenu from './components/fab-menu';
 
 // Componente interno para controlar o redirecionamento
 function RootNavigation() {
@@ -53,6 +54,8 @@ export default function RootLayout() {
     <PaperProvider theme={theme}>
       <AuthProvider>
         <RootNavigation />
+        {/* FAB MENU AQUI */}
+        <FabMenu />
       </AuthProvider>
     </PaperProvider>
   );
